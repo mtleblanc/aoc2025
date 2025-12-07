@@ -1,0 +1,79 @@
+#include <cassert>
+#include <fstream>
+#include <iostream>
+#include <sstream>
+#include <string>
+#include <vector>
+#include <ranges>
+
+struct range
+{
+    long min;
+    long max;
+    bool in(long v)
+    {
+        return v >= min && v <= max;
+    }
+    range(std::string s)
+    {
+        char c;
+        std::istringstream ss{s};
+        ss >> min >> c >> max;
+    }
+};
+
+struct event
+{
+    long id;
+    long effect;
+    event(long id, long effect) : id{id}, effect{effect} {}
+};
+
+int main()
+{
+    std::ifstream fs{"input06.txt"};
+    std::vector<std::string> v;
+    for (std::string s; getline(fs, s);)
+    {
+        if (s.length() == 0)
+            break;
+        v.emplace_back(s);
+    }
+
+    std::vector<bool> isMult;
+    std::vector<uint64_t> results;
+    std::istringstream ss{v.back()};
+    char c;
+    while (ss >> c)
+    {
+        switch (c)
+        {
+        case '*':
+            isMult.push_back(true);
+            results.push_back(1);
+            break;
+        case '+':
+            isMult.push_back(false);
+            results.push_back(0);
+            break;
+        default:
+            break;
+        }
+    }
+    for (const auto &l : std::ranges::subrange(v.begin(), v.end() - 1))
+    {
+        uint64_t cur;
+        std::istringstream ss{l};
+        int i = 0;
+        while (ss >> cur)
+        {
+            results[i] = isMult[i] ? results[i] * cur : results[i] + cur;
+            i++;
+        }
+        assert(i == isMult.size());
+    }
+    uint64_t accum;
+    for (auto v : results)
+        accum += v;
+    std::cout << accum << std::endl;
+}
