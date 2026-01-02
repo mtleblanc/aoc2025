@@ -79,7 +79,7 @@ uint64_t
 part1(std::vector<std::string> &v, size_t connections)
 {
     std::vector<std::shared_ptr<box>> boxes{};
-    std::vector<wire> wires{};
+    std::priority_queue<wire> wires{};
     for (auto &in : v)
     {
         int64_t x;
@@ -91,21 +91,17 @@ part1(std::vector<std::string> &v, size_t connections)
         auto b = std::make_shared<box>(x, y, z);
         for (auto &o : boxes)
         {
-            wires.emplace_back(o, b);
+            wires.emplace(o, b);
         }
         boxes.push_back(b);
     }
-    // print(wires);
-    std::make_heap(wires.begin(), wires.end());
-    // print(wires);
     for (int i = 0; i < connections; i++)
     {
-        std::pop_heap(wires.begin(), wires.end());
         wire w;
         do
         {
-            w = wires.back();
-            wires.pop_back();
+            w = wires.top();
+            wires.pop();
             // std::cout << "Considering " << *(w.b1) << " to " << *(w.b2) << std::endl;
         } while (0);
         // } while (w.b1->rep() == w.b2->rep());
