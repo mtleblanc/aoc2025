@@ -111,12 +111,24 @@ uint64_t bfs1(problem &p)
     return 0;
 }
 
-struct matrix
+template <typename T = float>
+struct Matrix
 {
+    struct Column;
+    struct Row;
+    friend struct Column;
+    friend struct Row;
+    friend struct columnIterator;
+    template <typename U>
+    friend std::ostream &operator<<(std::ostream &, const Matrix<U> &);
+
+private:
     size_t rows_, cols_;
-    std::vector<float> data;
-    matrix(size_t r, size_t c) : rows_(r), cols_(c), data(r * c, 0) {}
-    explicit matrix(const problem &p)
+    std::vector<T> data;
+
+public:
+    Matrix(size_t r, size_t c) : rows_(r), cols_(c), data(r * c, 0) {}
+    explicit Matrix(const problem &p)
     {
         rows_ = p.joltages.size();
         cols_ = p.moves.size() + 1;
@@ -132,64 +144,184 @@ struct matrix
                 data[r * cols_ + c] = 1;
         }
     }
-    float &operator()(size_t r, size_t c) { return data[r * cols_ + c]; }
-    const float &operator()(size_t r, size_t c) const { return data[r * cols_ + c]; }
+    auto &operator()(size_t r, size_t c) { return data[r * cols_ + c]; }
+    const auto &operator()(size_t r, size_t c) const { return data[r * cols_ + c]; }
 
-    matrix *swap(size_t r1, size_t r2)
+    auto &swapRows(size_t r1, size_t r2)
     {
         std::swap_ranges(
-            data.begin() + r1 * cols_,
-            data.begin() + (r1 + 1) * cols_,
-            data.begin() + r2 * cols_);
-        return this;
+            row(r1).begin(),
+            row(r1).end(),
+            row(r2).begin());
+        return *this;
     }
 
-    matrix *scale(size_t r, float s)
+    auto &scaleRow(size_t r, T s)
     {
         transform(
-            data.begin() + r * cols_,
-            data.begin() + (r + 1) * cols_,
-            data.begin() + r * cols_,
-            [s](float v)
+            row(r).begin(),
+            row(r).end(),
+            row(r).begin(),
+            [s](T v)
             { return v * s; });
-        return this;
+        return *this;
     }
 
-    matrix *add(size_t r1, size_t r2, float s)
+    auto &addRows(size_t r1, size_t r2, T s)
     {
         transform(
-            data.begin() + r2 * cols_,
-            data.begin() + (r2 + 1) * cols_,
-            data.begin() + r1 * cols_,
-            data.begin() + r2 * cols_,
-            [s](float v1, float v2)
-            { return v1 + v2 * s; });
-        return this;
+            row(r1).begin(),
+            row(r1).end(),
+            row(r2).begin(),
+            row(r2).begin(),
+            [s](T v1, T v2)
+            { return v1 * s + v2; });
+        return *this;
     }
 
-    matrix *rowReduce();
+    auto rows() const { return rows_; }
+    auto cols() const { return cols_; }
+    auto row(size_t r)
+    {
+        return Row{r, *this};
+    }
+    auto column(size_t c)
+    {
+        return Column{c, *this};
+    }
+
+    Matrix &rowReduce();
+
+    struct ColumnIterator : public std::iterator<
+                                std::random_access_iterator_tag, // iterator_category
+                                T,                               // value_type
+                                ssize_t,                         // difference_type
+                                const T *,                       // pointer
+                                T                                // reference
+                                >
+    {
+        friend struct Column;
+
+    public:
+        auto &operator*() { return matrix_(r, c); }
+        auto &operator++()
+        {
+            r++;
+            return *this;
+        }
+        auto &operator--()
+        {
+            r--;
+            return *this;
+        }
+        auto operator++(int)
+        {
+            ColumnIterator temp = *this;
+            ++*this;
+            return temp;
+        }
+        auto operator--(int)
+        {
+            ColumnIterator temp = *this;
+            --*this;
+            return temp;
+        }
+        auto operator==(const ColumnIterator &other) const
+        {
+            return r == other.r;
+        }
+        auto operator!=(const ColumnIterator &other) const
+        {
+            return !(*this == other);
+        }
+        auto operator<(const ColumnIterator &other) const
+        {
+            return r < other.r;
+        }
+        auto &operator+=(size_t n)
+        {
+            r += n;
+            return *this;
+        }
+        auto &operator-=(size_t n)
+        {
+            r -= n;
+            return *this;
+        }
+        auto operator+(size_t n) const
+        {
+            return ColumnIterator{r + n, c, matrix_};
+        }
+        auto operator-(size_t n) const
+        {
+            return ColumnIterator{r - n, c, matrix_};
+        }
+        auto operator-(const ColumnIterator &other) const
+        {
+            return static_cast<ssize_t>(r) - static_cast<ssize_t>(other.r);
+        }
+
+    private:
+        size_t r;
+        size_t c;
+        Matrix &matrix_;
+        ColumnIterator(size_t r_, size_t c_, Matrix &m) : r(r_), c(c_), matrix_(m) {}
+    };
+
+    struct Column
+    {
+        size_t c;
+        Matrix &matrix_;
+        auto &operator[](size_t r) { return matrix_(r, c); }
+        auto begin()
+        {
+            return ColumnIterator{0, c, matrix_};
+        }
+        auto end()
+        {
+            return ColumnIterator{matrix_.rows_, c, matrix_};
+        }
+    };
+
+    struct Row
+    {
+        size_t r;
+        Matrix &matrix_;
+        auto &operator[](size_t c) { return matrix_(r, c); }
+        auto begin()
+        {
+            return matrix_.data.begin() + r * matrix_.cols_;
+        }
+        auto end()
+        {
+            return matrix_.data.begin() + (r + 1) * matrix_.cols_;
+        }
+    };
 };
 
-std::ostream &operator<<(std::ostream &os, const matrix &m)
+template <typename T>
+std::ostream &operator<<(std::ostream &os, const Matrix<T> &m)
 {
     for (size_t r = 0; r < m.rows_; r++)
     {
         for (size_t c = 0; c < m.cols_; c++)
         {
-            os << m(r, c) << " ";
+            os << std::setprecision(1) << std::setw(5) << std::setfill(' ')
+               << std::fixed << m(r, c) << " ";
         }
         os << std::endl;
     }
     return os;
 }
 
-matrix *matrix::rowReduce()
+template <typename T>
+Matrix<T> &Matrix<T>::rowReduce()
 {
     size_t lead = 0;
     for (size_t r = 0; r < rows_; r++)
     {
         if (lead >= cols_)
-            return this;
+            return *this;
         size_t i = r;
         while (data[i * cols_ + lead] == 0)
         {
@@ -199,19 +331,18 @@ matrix *matrix::rowReduce()
                 i = r;
                 lead++;
                 if (lead == cols_)
-                    return this;
+                    return *this;
             }
         }
         if (i != r)
         {
-            swap(i, r);
-            // std::cout << *this << std::endl;
+            swapRows(i, r);
         }
 
-        float lv = data[r * cols_ + lead];
+        T lv = data[r * cols_ + lead];
         if (lv != 1)
         {
-            scale(r, 1.0f / lv);
+            scaleRow(r, 1.0f / lv);
             // std::cout << *this << std::endl;
         }
         lv = data[r * cols_ + lead];
@@ -219,53 +350,19 @@ matrix *matrix::rowReduce()
         {
             if (i != r)
             {
-                float lv2 = data[i * cols_ + lead];
-                float factor = lv2 / lv;
+                T lv2 = data[i * cols_ + lead];
+                T factor = lv2 / lv;
                 if (factor != 0)
                 {
-                    add(r, i, -lv2 / lv);
+                    addRows(r, i, -lv2 / lv);
                     // std::cout << *this << std::endl;
                 }
             }
         }
         lead++;
     }
-    return this;
+    return *this;
 }
-
-uint64_t bfs2(problem &p)
-{
-    return 0;
-    const size_t len = p.target.size();
-    std::deque<node<int>> horizon;
-    node<int> start{p.joltages, 0, 0};
-    horizon.push_back(start);
-    while (horizon.size() > 0)
-    {
-        node<int> cur = horizon.front();
-        horizon.pop_front();
-        for (; cur.idx < p.moves.size(); cur.idx++)
-        {
-            bool bad = false;
-            node<int> next{cur.value, cur.idx, cur.cnt + 1};
-            std::vector<size_t> move = p.moves[cur.idx];
-            for (size_t m : move)
-            {
-                next.value[m] = next.value[m] - 1;
-                if (next.value[m] < 0)
-                    bad = true;
-            }
-            if (bad)
-                continue;
-            if (std::accumulate(next.value.begin(), next.value.end(), 0) == 0)
-                return next.cnt;
-            horizon.push_back(next);
-        }
-    }
-    return 0;
-}
-
-size_t threes = 0;
 
 uint64_t
 part1(std::vector<problem> &v)
@@ -276,71 +373,59 @@ part1(std::vector<problem> &v)
     return accum;
 }
 
-uint32_t minPresses(matrix &m)
+template <typename T, typename It>
+auto reduce_helper(std::vector<It> cols, std::vector<T> coeffs, std::vector<T> orig) {
+    auto cli = cols.begin();
+    auto cfi = coeffs.begin();
+    for(; cli != cols.end(); ++cli, ++cfi) {
+        std::transform(cli->begin(), cli->end(), orig.begin(), orig.begin(), [cfi](auto cv, auto ov) { return ov - cv * (*cfi); });
+    }
+}
+
+template <typename T = float>
+auto minPresses(Matrix<T> &m)
 {
-    std::cout << m << std::endl;
-    matrix orig{m};
+    size_t presses = SIZE_T_MAX;
+    Matrix<T> orig{m};
     m.rowReduce();
-    std::cout << m << std::endl;
-    matrix rr{m};
-    uint32_t presses = 0;
-    std::vector<size_t> kernel_cols;
+    std::vector<size_t> free_column_indices;
+    std::vector<typename Matrix<T>::Column> pivot_cols;
     size_t pivot_row = 0;
-    for (size_t c = 0; c < m.cols_ - 1; c++)
+    for (size_t c = 0; c < m.cols() - 1; c++)
     {
-        if (m(pivot_row, c) == 1)
+        if (pivot_row < m.rows() && m(pivot_row, c) == 1)
         {
-            // This is a pivot column
+            pivot_cols.push_back(orig.column(c));
             pivot_row++;
         }
         else
         {
-            // This is a free variable
-            kernel_cols.push_back(c);
+            free_column_indices.push_back(c);
         }
     }
-    std::vector<float> deltas;
-    for (size_t kc : kernel_cols)
-    {
-        float delta = 0;
-        for (size_t r = 0; r < m.rows_; r++)
-        {
-            delta += m(r, kc);
-        }
-        deltas.push_back(delta);
-    }
-    for (size_t row = 0; row < m.rows_; row++)
-    {
-        restart:
-        auto rhs = m(row, m.cols_ - 1);
-        if (rhs < -0.1)
-        {
-            for (auto kc : kernel_cols)
-            {
-                float lhs = m(row, kc);
-                if (lhs < -0.1)
-                {
-                    auto needed = static_cast<int64_t>(rhs / m(row, kc) + 0.9f);
-                    for(size_t r3 = 0; r3 < row; r3++) {
-                        if(m(r3, m.cols_ -1) - needed * m(r3, kc) < -0.1) goto next_kc;
-                    }
-                    assert (needed < 200);
-                    presses += needed;
-                    for (size_t r2 = 0; r2 < m.rows_; r2++)
-                    {
-                        m(r2, m.cols_ - 1) -= needed * m(r2, kc);
-                    }
-                    
-                    assert(m(row, m.cols_ - 1) >= -0.1);
-                    row = 0;
-                    goto restart;
-                }
-                next_kc:
-                continue;
-            }
-        }
-    }
+    auto orig_target_col = orig.column(orig.cols() - 1);
+    std::vector<T> orig_target{orig_target_col.begin(), orig_target_col.end()};
+    auto rr_target_col = m.column(m.cols() - 1);
+    std::vector<T> rr_target{rr_target_col.begin(), rr_target_col.end()};
 
+    std::vector<T> free_coeffs(free_column_indices.size(), 0);
+    std::vector<typename Matrix<T>::Column> free_columns_orig;
+    std::vector<typename Matrix<T>::Column> free_columns_reduced;
+    std::transform(free_column_indices.begin(), free_column_indices.end(), back_inserter(free_columns_orig), [&orig](auto c)
+                   { return orig.column(c); });
+    std::transform(free_column_indices.begin(), free_column_indices.end(), back_inserter(free_columns_reduced), [&m](auto c)
+                   { return m.column(c); });
+    for (size_t index = 0;;)
+    {
+        std::vector<T> trial_target{rr_target};
+        reduce_helper(free_columns_reduced, free_coeffs, trial_target);
+        if(true || std::all_of(trial_target.begin(), trial_target.end(), [](auto v){return v >= -0.1 && abs(v - (int)v) < 0.1;})) {
+            std::transform(trial_target.begin(), trial_target.end(), trial_target.begin(), [](auto v){ return round(v); });
+            std::for_each(trial_target.begin(), trial_target.end(), [](auto v){ std::cout << v << " ";});
+            break;
+        }
+        
+    }
     return presses;
 }
 
@@ -350,18 +435,17 @@ uint64_t part2(std::vector<problem> &v)
     size_t cur = 0;
     for (auto &p : v)
     {
-        matrix m{p};
+        Matrix<float> m{p};
         // std::cout << m << std::endl;
         accum += minPresses(m);
         cur++;
     }
-    std::cout << threes << " problems had 3 free variables." << std::endl;
     return accum;
 }
 
 int main()
 {
-    std::ifstream fs{"input10.txt"};
+    std::ifstream fs{"sample10.txt"};
     std::vector<problem> v;
     for (std::string s; getline(fs, s);)
     {
