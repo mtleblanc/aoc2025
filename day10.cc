@@ -8,6 +8,9 @@
 #include <vector>
 
 #include "matrix.hh"
+#include "rational.hh"
+using Q = Rational<int>;
+
 struct Problem
 {
     std::vector<bool> target;
@@ -153,7 +156,6 @@ uint64_t part1(std::vector<Problem>& v)
     }
     return accum;
 }
-constexpr auto EPS = 0.1F;
 template <typename T, typename Coeff, typename Col>
 auto reduceHelper(std::vector<Col>& cols, std::vector<Coeff>& coeffs, std::vector<T>& orig)
 {
@@ -174,7 +176,7 @@ auto nextCoeffs(std::vector<Col>& cols, std::vector<Coeff>& coeffs, std::vector<
         coeffs[idx]++;
         std::vector<T> test{orig};
         reduceHelper(cols, coeffs, test);
-        if (std::all_of(test.begin(), test.end(), [](auto t) { return t > -EPS; }))
+        if (std::all_of(test.begin(), test.end(), [](auto t) { return t > 0; }))
         {
             return true;
         }
@@ -183,7 +185,7 @@ auto nextCoeffs(std::vector<Col>& cols, std::vector<Coeff>& coeffs, std::vector<
     return false;
 }
 
-template <typename T = float> auto minPresses(Matrix<T>& m)
+template <typename T = Q> auto minPresses(Matrix<T>& m)
 {
     int presses = INT_MAX;
     Matrix<T> orig{m};
@@ -223,7 +225,8 @@ template <typename T = float> auto minPresses(Matrix<T>& m)
 
     std::vector<typename Matrix<T>::Column> allCols{};
 
-    for (size_t c = 0; c < m.cols() - 1; c++)
+    allCols.reserve(m.cols() - 1);
+for (size_t c = 0; c < m.cols() - 1; c++)
     {
         allCols.push_back(m.column(c));
     };
@@ -236,14 +239,14 @@ template <typename T = float> auto minPresses(Matrix<T>& m)
     {
         std::vector<T> rrTest{rrTarget};
         reduceHelper(freeCols, freeCoeffs, rrTest);
-        if (std::all_of(rrTest.begin(), rrTest.end(), [](auto t) { return t > -EPS; }))
+        if (std::all_of(rrTest.begin(), rrTest.end(), [](auto t) { return t > 0; }))
         {
             std::vector<int> allCoeffs{};
             allCoeffs.reserve(m.cols() - 1);
             for (size_t c = 0; c < m.cols() - 1; c++)
             {
                 allCoeffs.push_back(static_cast<int>(
-                    c <= lastPivot ? rrTest[c] + EPS : freeCoeffs[c - lastPivot - 1]));
+                    c <= lastPivot ? rrTest[c] : freeCoeffs[c - lastPivot - 1]));
             }
             std::vector<T> origTest{origTarget};
             reduceHelper(allCols, allCoeffs, origTest);
@@ -286,7 +289,7 @@ uint64_t part2(std::vector<Problem>& v)
     uint64_t accum{};
     for (auto& p : v)
     {
-        auto m = p.toMatrix<float>();
+        auto m = p.toMatrix<Q>();
         // std::cout << m << std::endl;
         accum += minPresses(m);
     }

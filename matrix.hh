@@ -277,7 +277,7 @@ template <typename T> Matrix<T>& Matrix<T>::rowReduce()
         T lv = data[r * cols_ + lead];
         if (lv != 1)
         {
-            scaleRow(r, 1.0F / lv);
+            scaleRow(r, 1 / lv);
             // std::cout << *this << std::endl;
         }
         lv = data[r * cols_ + lead];
