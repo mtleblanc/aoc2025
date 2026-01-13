@@ -1,4 +1,3 @@
-#include <sstream>
 #include <cmath>
 
 #include "aoc.hh"
@@ -12,7 +11,7 @@
  *
  * problem: given a dial with 100 locations, starting at location 50, perform the turns from the
  * input part1: how many turns end on 0 part2: how many times does the dial move to 0, including
- * during a turn.  
+ * during a turn.
  */
 
 namespace aoc
@@ -82,7 +81,8 @@ template <class T, T N> std::istream& operator>>(std::istream& is, Dial<T, N>& d
         {
             d.add(val);
         }
-        else {
+        else
+        {
             is.setstate(std::ios_base::failbit);
         }
     }
@@ -91,15 +91,11 @@ template <class T, T N> std::istream& operator>>(std::istream& is, Dial<T, N>& d
 } // namespace
 template <> Solution solve<YEAR, DAY>(std::istream& input)
 {
-    std::vector<std::string> lines;
-    readAllLines(input, lines);
     constexpr auto N = 100;
     constexpr auto D = 50;
     Dial<int, N> d{D};
-    for (const auto& turn : lines)
+    while (input >> d)
     {
-        std::istringstream iss{turn};
-        iss >> d;
     }
     return Solution{d.landedZero(), d.rotations()};
 }
