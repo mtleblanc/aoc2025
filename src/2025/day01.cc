@@ -89,8 +89,10 @@ template <class T, T N> std::istream& operator>>(std::istream& is, Dial<T, N>& d
     return is;
 }
 } // namespace
-template <> Solution solve<YEAR, DAY>(const std::vector<std::string>& lines)
+template <> Solution solve<YEAR, DAY>(std::istream& input)
 {
+    std::vector<std::string> lines;
+    readAllLines(input, lines);
     constexpr auto N = 100;
     constexpr auto D = 50;
     Dial<int, N> d{D};

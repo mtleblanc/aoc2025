@@ -53,8 +53,10 @@ template <int N> size_t solveFor(const std::vector<std::string>& lines)
     return accum;
 }
 } // namespace
-template <> Solution solve<YEAR, DAY>(const std::vector<std::string>& lines)
+template <> Solution solve<YEAR, DAY>(std::istream& input)
 {
+    std::vector<std::string> lines;
+    readAllLines(input, lines);
     constexpr int PART1_N = 2;
     constexpr int PART2_N = 12;
     return Solution{solveFor<PART1_N>(lines), solveFor<PART2_N>(lines)};

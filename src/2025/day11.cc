@@ -127,8 +127,10 @@ size_t part2(std::vector<Node>& ns)
     // n.pathsNeither.value();
 }
 } // namespace
-template <> Solution solve<YEAR, DAY>(const std::vector<std::string>& lines)
+template <> Solution solve<YEAR, DAY>(std::istream& input)
 {
+    std::vector<std::string> lines;
+    readAllLines(input, lines);
     std::vector<Node> v;
     for (const auto& s : lines)
     {

@@ -61,8 +61,10 @@ uint64_t part2(std::vector<std::string> v)
     return accum;
 }
 } // namespace
-template <> Solution solve<YEAR, DAY>(const std::vector<std::string>& lines)
+template <> Solution solve<YEAR, DAY>(std::istream& input)
 {
+    std::vector<std::string> lines;
+    readAllLines(input, lines);
 
     std::vector<bool> isMult;
     std::vector<uint64_t> results;

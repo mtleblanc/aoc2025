@@ -51,8 +51,10 @@ size_t part1(std::vector<Problem>& ns)
     return std::accumulate(fits.begin(), fits.end(), size_t{});
 }
 } // namespace
-template <> Solution solve<YEAR, DAY>(const std::vector<std::string>& lines)
+template <> Solution solve<YEAR, DAY>(std::istream& input)
 {
+    std::vector<std::string> lines;
+    readAllLines(input, lines);
     std::vector<Problem> v;
     for (const auto& s : lines | std::views::drop(30))
     {

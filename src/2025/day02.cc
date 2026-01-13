@@ -118,8 +118,10 @@ Solution improved(uint64_t from, uint64_t to)
     return accum;
 }
 } // namespace
-template <> Solution solve<YEAR, DAY>(const std::vector<std::string>& lines)
+template <> Solution solve<YEAR, DAY>(std::istream& input)
 {
+    std::vector<std::string> lines;
+    readAllLines(input, lines);
 
     // auto start = std::chrono::steady_clock::now();
 

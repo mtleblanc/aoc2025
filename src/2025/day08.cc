@@ -166,8 +166,10 @@ uint64_t part2(const std::vector<std::string>& v)
 
 } // namespace
 
-template <> Solution solve<YEAR, DAY>(const std::vector<std::string>& lines)
+template <> Solution solve<YEAR, DAY>(std::istream& input)
 {
+    std::vector<std::string> lines;
+    readAllLines(input, lines);
     constexpr size_t SAMPLE_CONNECTIONS = 10;
     constexpr size_t ACTUAL_CONNECTIONS = 1000;
     return Solution{

@@ -97,8 +97,10 @@ size_t part2(Grid g)
     return accum;
 }
 } // namespace
-template <> Solution solve<YEAR, DAY>(const std::vector<std::string>& lines)
+template <> Solution solve<YEAR, DAY>(std::istream& input)
 {
+    std::vector<std::string> lines;
+    readAllLines(input, lines);
     Grid g{lines};
     return Solution{part1(g), part2(g)};
 }

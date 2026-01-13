@@ -1,3 +1,5 @@
+#include <istream>
+#include <string>
 #include <vector>
 
 namespace aoc
@@ -15,9 +17,18 @@ struct Solution
     }
 };
 
-template <size_t Y, size_t D> Solution solve(const std::vector<std::string>& lines)
+inline void readAllLines(std::istream& input, std::vector<std::string>& lines)
 {
-    (void)lines;
+    std::string tmp;
+    while (std::getline(input, tmp))
+    {
+        lines.push_back(std::move(tmp));
+    }
+}
+
+template <size_t Y, size_t D> Solution solve(std::istream& input)
+{
+    (void)input;
     return {};
 }
 } // namespace aoc

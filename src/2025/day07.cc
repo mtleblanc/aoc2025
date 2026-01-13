@@ -83,8 +83,10 @@ uint64_t part2(const std::vector<std::string>& v)
 
 } // namespace
 
-template <> Solution solve<YEAR, DAY>(const std::vector<std::string>& lines)
+template <> Solution solve<YEAR, DAY>(std::istream& input)
 {
+    std::vector<std::string> lines;
+    readAllLines(input, lines);
     return Solution{part1(lines), part2(lines)};
 }
 } // namespace aoc

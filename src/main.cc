@@ -9,13 +9,7 @@ template <size_t Y, size_t D> void printSolution(bool useSample)
     oss << "inputs/" << Y << "/" << (useSample ? "sample" : "input") << std::setfill('0')
         << std::setw(2) << D << ".txt";
     std::ifstream ifs{oss.str()};
-    std::vector<std::string> lines;
-    std::string tmp;
-    while (getline(ifs, tmp))
-    {
-        lines.push_back(std::move(tmp));
-    }
-    auto solution = aoc::solve<Y, D>(lines);
+    auto solution = aoc::solve<Y, D>(ifs);
     std::cout << Y << " Day " << D << " part 1: " << solution.part1 << "\n";
     std::cout << Y << " Day " << D << " part 2: " << solution.part2 << "\n";
 }
