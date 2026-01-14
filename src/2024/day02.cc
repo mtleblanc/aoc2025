@@ -38,15 +38,12 @@ inline bool isGradual(const std::vector<int>& v)
         return true;
     }
     int s = v[0] < v[1] ? 1 : -1;
-    for (size_t i{}; i < v.size() - 1; ++i)
+    auto cmp = [s](auto l, auto r)
     {
-        int d = (v[i + 1] - v[i]) * s;
-        if (d < 1 || d > 3)
-        {
-            return false;
-        }
-    }
-    return true;
+        int d = (r - l) * s;
+        return d < 1 || d > 3;
+    };
+    return std::ranges::adjacent_find(v, cmp) == v.end();
 }
 
 inline bool isSemiGradual(const std::vector<int>& v)
@@ -90,9 +87,7 @@ template <> Solution solve<YEAR, DAY>(std::istream& input)
     readAllLines(input, rss);
     std::vector<std::vector<int>> rsi;
     std::ranges::transform(rss, back_inserter(rsi), toVec);
-    Solution s;
-    s.part1 = std::ranges::count_if(rsi, isGradual);
-    s.part2 = std::ranges::count_if(rsi, isSemiGradual);
-    return s;
+    return {static_cast<size_t>(std::ranges::count_if(rsi, isGradual)),
+            static_cast<size_t>(std::ranges::count_if(rsi, isSemiGradual))};
 }
 } // namespace aoc
