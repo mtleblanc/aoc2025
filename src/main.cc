@@ -10,8 +10,12 @@ template <size_t Y, size_t D> void printSolution(bool useSample)
         << std::setw(2) << D << ".txt";
     std::ifstream ifs{oss.str()};
     auto solution = aoc::solve<Y, D>(ifs);
-    std::cout << Y << " Day " << D << " part 1: " << solution.part1 << "\n";
-    std::cout << Y << " Day " << D << " part 2: " << solution.part2 << "\n";
+
+    // NOLINTBEGIN
+    std::cout << Y << " Day " << std::setfill('0') << std::setw(2) << D
+              << " part 1: " << std::setfill(' ') << std::setw(10) << solution.part1 << "\t"
+              << " part 2: " << solution.part2 << "\n";
+    // NOLINTEND
 }
 
 template <size_t Y> struct YearPrinter
@@ -31,6 +35,6 @@ template <size_t Y> struct YearPrinter
 int main()
 {
     constexpr auto YEAR = 2024;
-    constexpr auto DAYS = 12;
+    constexpr auto DAYS = 25;
     YearPrinter<YEAR>{}.printAll<DAYS>(false);
 }
