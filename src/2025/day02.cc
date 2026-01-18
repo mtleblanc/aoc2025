@@ -1,7 +1,6 @@
 #include <algorithm>
 #include <cassert>
 #include <iostream>
-#include <sstream>
 
 #include "aoc.hh"
 namespace aoc
@@ -120,23 +119,16 @@ Solution improved(uint64_t from, uint64_t to)
 } // namespace
 template <> Solution solve<YEAR, DAY>(std::istream& input)
 {
-    auto lines = readAllLines(input);
-
-    // auto start = std::chrono::steady_clock::now();
-
-    std::stringstream fs{};
-    std::ranges::copy(lines, std::ostream_iterator<std::string>(fs, "\n"));
-
     uint64_t maxmax{};
     Solution accum;
 
-    while (fs)
+    while (input)
     {
         uint64_t from{};
         uint64_t to{};
         char c{};
         char c1{};
-        fs >> from >> c >> to >> c1;
+        input >> from >> c >> to >> c1;
         if (c != '-')
         {
             break;

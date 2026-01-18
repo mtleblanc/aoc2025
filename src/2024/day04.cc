@@ -1,4 +1,5 @@
 #include "aoc.hh"
+#include <algorithm>
 #include <array>
 #include <cassert>
 #include <cstddef>
