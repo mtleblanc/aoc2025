@@ -34,7 +34,7 @@ template <size_t Y> struct YearPrinter
 
 int main()
 {
-    constexpr auto YEAR = 2024;
+    constexpr auto YEAR = 2015;
     constexpr auto DAYS = 25;
     YearPrinter<YEAR>{}.printAll<DAYS>(false);
 }
