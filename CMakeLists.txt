@@ -36,6 +36,17 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 #     set(CMAKE_CXX_CLANG_TIDY "${CLANG_TIDY_EXE}")
 # endif()
 
+# Find OpenSSL (install via: brew install openssl)
+find_package(OpenSSL QUIET)
+if(NOT OpenSSL_FOUND)
+    message(FATAL_ERROR
+        "OpenSSL not found. Please install it:\n"
+        "  macOS:  brew install openssl\n"
+        "  Ubuntu: sudo apt install libssl-dev\n"
+        "  Fedora: sudo dnf install openssl-devel"
+    )
+endif()
+
 # Add include directory
 include_directories(include)
 
@@ -44,6 +55,7 @@ file(GLOB_RECURSE DAY_SOURCES "src/*/day*.cc")
 
 # Main executable that runs solutions
 add_executable(aoc src/main.cc ${DAY_SOURCES})
+target_link_libraries(aoc PRIVATE OpenSSL::Crypto)
 
 # Enable warnings for main executable
 if(MSVC)

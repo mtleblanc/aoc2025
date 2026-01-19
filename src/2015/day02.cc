@@ -1,3 +1,5 @@
+#include <algorithm>
+
 #include "aoc.hh"
 
 /* https://adventofcode.com/2015/day/2
@@ -17,7 +19,7 @@ template <> Solution solve<YEAR, DAY>(std::istream& input)
     size_t ribbon{};
     while (input >> l >> c >> w >> c >> h)
     {
-        size_t longest = std::max(std::max(l, w), h);
+        size_t longest = std::max({l, w, h});
         paper += 2 * (l * w + l * h + w * h) + l * w * h / longest;
         ribbon += l * w * h + 2 * (l + w + h - longest);
     }
