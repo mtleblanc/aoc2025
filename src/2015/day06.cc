@@ -3,6 +3,7 @@
 #include <cassert>
 #include <functional>
 #include <regex>
+#include <stdexcept>
 
 /* https://adventofcode.com/2015/day/6
  */
@@ -13,6 +14,24 @@ constexpr size_t DAY = 6;
 
 namespace
 {
+struct Rect
+{
+    size_t x1;
+    size_t y1;
+    size_t x2;
+    size_t y2;
+    Rect(size_t x1, size_t y1, size_t x2, size_t y2) : x1{x1}, y1{y1}, x2{x2}, y2{y2}
+    {
+        if (x1 > x2)
+        {
+            std::swap(x1, x2);
+        }
+        if (y1 > y2)
+        {
+            std::swap(y1, y2);
+        }
+    }
+};
 template <size_t GridSize> struct Grid
 {
     std::array<int, GridSize * GridSize> lights{};
@@ -22,19 +41,11 @@ template <size_t GridSize> struct Grid
         return lights[y * GridSize + x];
     }
 
-    Grid& applyToRect(size_t x1, size_t y1, size_t x2, size_t y2, const std::function<int(int)>& f)
+    Grid& applyToRect(const Rect& r, auto f)
     {
-        if (x1 > x2)
+        for (size_t y = r.y1; y <= r.y2; ++y)
         {
-            std::swap(x1, x2);
-        }
-        if (y1 > y2)
-        {
-            std::swap(x1, x2);
-        }
-        for (size_t y = y1; y <= y2; ++y)
-        {
-            for (size_t x = x1; x <= x2; ++x)
+            for (size_t x = r.x1; x <= r.x2; ++x)
             {
                 (*this)(x, y) = f((*this)(x, y));
             }
@@ -42,32 +53,6 @@ template <size_t GridSize> struct Grid
         return *this;
     }
 };
-
-int turnOn(int _)
-{
-    return 1;
-}
-int turnOff(int _)
-{
-    return 0;
-}
-int toggle(int x)
-{
-    return 1 - x;
-}
-
-int turnUp(int x)
-{
-    return x + 1;
-}
-int turnDown(int x)
-{
-    return x > 0 ? x - 1 : 0;
-}
-int toggleUp(int x)
-{
-    return x + 2;
-}
 } // namespace
 
 template <> Solution solve<YEAR, DAY>(std::istream& input)
@@ -86,29 +71,28 @@ template <> Solution solve<YEAR, DAY>(std::istream& input)
     for (const auto& line : lines)
     {
         std::regex_match(line, match, matcher);
-        auto x1 = stoul(match[X1_INDEX]);
-        auto y1 = stoul(match[Y1_INDEX]);
-        auto x2 = stoul(match[X2_INDEX]);
-        auto y2 = stoul(match[Y2_INDEX]);
-        int (*f)(int) {};
-        int (*g)(int) {};
+        if (!match.ready() || match.empty())
+        {
+            throw std::invalid_argument("malformed input");
+        }
+        Rect r{stoul(match[X1_INDEX]), stoul(match[Y1_INDEX]), stoul(match[X2_INDEX]),
+               stoul(match[Y2_INDEX])};
+
         if (match[ACTION_INDEX] == "turn on")
         {
-            f = turnOn;
-            g = turnUp;
+            g1.applyToRect(r, [](int) { return 1; });
+            g2.applyToRect(r, [](int x) { return x + 1; });
         }
         else if (match[ACTION_INDEX] == "turn off")
         {
-            f = turnOff;
-            g = turnDown;
+            g1.applyToRect(r, [](int) { return 0; });
+            g2.applyToRect(r, [](int x) { return x > 0 ? x - 1 : 0; });
         }
         else
         {
-            f = toggle;
-            g = toggleUp;
+            g1.applyToRect(r, [](int x) { return 1 - x; });
+            g2.applyToRect(r, [](int x) { return x + 2; });
         }
-        g1.applyToRect(x1, y1, x2, y2, f);
-        g2.applyToRect(x1, y1, x2, y2, g);
     }
 
     return {static_cast<size_t>(std::ranges::fold_left(g1.lights, 0, std::plus<>())),
