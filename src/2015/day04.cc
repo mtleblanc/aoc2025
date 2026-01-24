@@ -45,8 +45,8 @@ std::optional<size_t> mineSlice(const std::string& prefix, size_t from, size_t c
 {
     auto appendN = [&prefix](auto n) { return prefix + std::to_string(n); };
 
-    auto view = std::ranges::iota_view<size_t>(from) | std::views::take(count) |
-                std::views::transform(appendN) | std::views::transform(computeMD5FromString);
+    auto view = std::views::iota(from, from + count) | std::views::transform(appendN) |
+                std::views::transform(computeMD5FromString);
     auto found = std::ranges::find_if(view, hasStartingZeros<N>);
     return found == view.end() ? std::optional<size_t>{} : found - view.begin() + from;
 }
@@ -86,7 +86,7 @@ template <size_t N> size_t parallelSolve(const std::string& prefix)
     std::vector<std::thread> miners;
     std::atomic<size_t> counter;
     std::atomic<size_t> result;
-    for (auto _ : std::views::iota(0) | std::views::take(concur))
+    for (auto _ : std::views::iota(0UL, concur))
     {
         miners.emplace_back(mine<N, BLOCKSIZE>, prefix, std::ref(counter), std::ref(result));
     }
