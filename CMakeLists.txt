@@ -5,14 +5,24 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Fetch Catch2 for testing
+# Fetch dependencies
 include(FetchContent)
+
+# Fetch Catch2 for testing
 FetchContent_Declare(
   Catch2
   GIT_REPOSITORY https://github.com/catchorg/Catch2.git
   GIT_TAG        v3.12.0  # Latest stable version
 )
-FetchContent_MakeAvailable(Catch2)
+
+# Fetch nlohmann/json for JSON parsing
+FetchContent_Declare(
+  json
+  GIT_REPOSITORY https://github.com/nlohmann/json.git
+  GIT_TAG        v3.11.3  # Latest stable version
+)
+
+FetchContent_MakeAvailable(Catch2 json)
 
 # Add Catch2's CMake modules to the path
 list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/extras)
@@ -55,7 +65,7 @@ file(GLOB_RECURSE DAY_SOURCES "src/*/day*.cc")
 
 # Main executable that runs solutions
 add_executable(aoc src/main.cc ${DAY_SOURCES})
-target_link_libraries(aoc PRIVATE OpenSSL::Crypto)
+target_link_libraries(aoc PRIVATE OpenSSL::Crypto nlohmann_json::nlohmann_json)
 
 # Enable warnings for main executable
 if(MSVC)

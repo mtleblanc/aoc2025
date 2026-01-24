@@ -42,9 +42,11 @@
     "clangd.arguments": [
         "--compile-commands-dir=${workspaceFolder}/build-debug",
         "--background-index",
-        "--clang-tidy"
+        "--clang-tidy",
+        "--header-insertion=never"
     ],
     "cmake.buildDirectory": "${workspaceFolder}/build-debug",
     "cmake.configureOnOpen": false,
-    "cmake.configureOnEdit": false
+    "cmake.configureOnEdit": false,
+    "clangd.path": "/opt/homebrew/opt/llvm/bin/clangd",
 }

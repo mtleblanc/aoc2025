@@ -9,15 +9,22 @@ constexpr size_t DAY = 10;
 
 namespace
 {
-void lookAndSay(const std::vector<int>& in, std::vector<int>& out)
+// Digit seems slightly faster than other types.  the sequence never has a digit over 3, but
+// subword access is slow
+using Digit = uint32_t;
+
+void lookAndSay(const std::vector<Digit>& in, std::vector<Digit>& out)
 {
     out.clear();
     if (in.empty())
     {
         return;
     }
-    int prev{in.front()};
-    int seq{};
+    // grow while empty to avoid moves.  growth rate is 1.3 per iteration, buffers are swapping so
+    // need to grow 1.3^2 = 1.7.  more precise than 2 shows no speedup
+    out.reserve(in.size() * 2);
+    Digit prev{in.front()};
+    Digit seq{};
     for (auto x : in)
     {
         if (x == prev)
@@ -39,12 +46,12 @@ void lookAndSay(const std::vector<int>& in, std::vector<int>& out)
 
 template <> Solution solve<YEAR, DAY>(std::istream& input)
 {
-    std::vector<int> sequence;
+    std::vector<Digit> sequence;
     for (char c{}; input >> c;)
     {
         sequence.push_back(c - '0');
     }
-    std::vector<int> next;
+    std::vector<Digit> next;
     constexpr size_t ROUNDS_1 = 40;
     constexpr size_t ROUNDS_2 = 50;
     for (size_t i = 0; i < ROUNDS_1; i++)
