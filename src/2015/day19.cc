@@ -1,11 +1,12 @@
 #include "aoc.hh"
+#include <algorithm>
+#include <cassert>
 #include <iostream>
 #include <map>
 #include <ranges>
 #include <scn/scan.h>
 #include <set>
 #include <string_view>
-#include <cassert>
 
 /* https://adventofcode.com/2015/day/19
  */
@@ -57,20 +58,18 @@ struct EarleyState
     size_t origin{};
     Production* production;
     size_t progress{};
+    size_t depth{1};
 
-    auto operator<=>(EarleyState o) const
+    auto operator<=>(const EarleyState& o) const = default;
+    // {
+    //     return std::tie(origin, production, progress) <=>
+    //            std::tie(o.origin, o.production, o.progress);
+    // }
+
+    bool operator==(const EarleyState& o) const
     {
-        if (origin != o.origin)
-        {
-
-            return origin <=> o.origin;
-        }
-        if (production != o.production)
-        {
-            return production <=> o.production;
-        }
-        return progress <=> o.progress;
-    }
+        return (*this <=> o) == std::strong_ordering::equal;
+    };
 
     [[nodiscard]] auto isComplete() const
     {
@@ -81,42 +80,42 @@ struct EarleyState
         return production->second.substr(progress, progress + 1);
     }
 
-    EarleyState(Production& production, size_t origin = 0, size_t progress = 0)
-        : origin{origin}, production{&production}, progress{progress}
+    EarleyState(Production& production, size_t origin = 0, size_t progress = 0, size_t depth = 1)
+        : origin{origin}, production{&production}, progress{progress}, depth{depth}
     {
         assert(this->production != nullptr);
     }
 
-    EarleyState(Production* production, size_t origin = 0, size_t progress = 0)
-        : origin{origin}, production{production}, progress{progress}
+    EarleyState(Production* production, size_t origin = 0, size_t progress = 0, size_t depth = 1)
+        : origin{origin}, production{production}, progress{progress}, depth{depth}
     {
         assert(this->production != nullptr);
     }
 
-    [[nodiscard]] EarleyState scan() const
+    [[nodiscard]] EarleyState scan(size_t d = 0) const
     {
+        (void)d;
         return EarleyState{production, origin, progress + 1};
     }
 
-    friend std::ostream& operator<<(std::ostream& os, const EarleyState& es)
-    {
-        os << es.production->first << " -> " << es.production->second
-           << ", " << es.progress << ", " << es.origin;
-        return os;
-    }
+    // friend std::ostream& operator<<(std::ostream& os, const EarleyState& es)
+    // {
+    //     os << es.production->first << " -> " << es.production->second << ", " << es.progress <<
+    //     ", "
+    //        << es.origin;
+    //     return os;
+    // }
 };
 
 size_t part2(const std::multimap<std::string, std::string, std::less<>>& productions,
              std::string_view target)
 {
     (void)productions;
-
-    std::set<EarleyState> seenStates;
     std::vector<std::vector<EarleyState>> states(target.size() + 1);
 
     auto add = [&](EarleyState state, size_t k)
     {
-        if (!seenStates.insert(state).second)
+        if (std::ranges::contains(states[k], state))
         {
             return false;
         }
@@ -135,10 +134,7 @@ size_t part2(const std::multimap<std::string, std::string, std::less<>>& product
         for (auto it = predictions.first; it != predictions.second; ++it)
         {
             EarleyState predicted{*it, k};
-            if (add(predicted, k))
-            {
-                std::cout << predicted << " predicted" << std::endl;
-            }
+            add(predicted, k);
         }
     };
     auto scan = [&](auto state, size_t k)
@@ -153,10 +149,7 @@ size_t part2(const std::multimap<std::string, std::string, std::less<>>& product
             return;
         }
         auto scanned = state.scan();
-        if (add(scanned, k+1))
-        {
-            std::cout << scanned << " scanned" << std::endl;
-        }
+        add(scanned, k + 1);
     };
     auto complete = [&](auto state, auto k)
     {
@@ -176,11 +169,8 @@ size_t part2(const std::multimap<std::string, std::string, std::less<>>& product
             {
                 continue;
             }
-            auto completed = s.scan();
-            if (add(completed, k))
-            {
-                std::cout << completed << " completed" << std::endl;
-            }
+            auto completed = s.scan(state.depth);
+            add(completed, k);
         }
     };
 
@@ -188,14 +178,11 @@ size_t part2(const std::multimap<std::string, std::string, std::less<>>& product
     for (auto it = initial.first; it != initial.second; ++it)
     {
         auto state = EarleyState{*it};
-        seenStates.insert(state);
-        std::cout << state << std::endl;
         states[0].push_back(state);
     }
 
     for (size_t k{}; k < states.size(); ++k)
     {
-        std::cout << "k = " << k << std::endl;
         for (size_t current{}; current < states[k].size(); ++current)
         {
             auto state = states[k][current];
@@ -205,7 +192,10 @@ size_t part2(const std::multimap<std::string, std::string, std::less<>>& product
         }
     }
 
-    return 0;
+    auto parses =
+        states.back() |
+        std::views::filter([](auto s) { return s.production->first == "e" && s.isComplete(); });
+    return std::ranges::min(parses, {}, &EarleyState::depth).depth;
 }
 
 } // namespace
